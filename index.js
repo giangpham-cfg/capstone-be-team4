@@ -4,6 +4,7 @@ import cors from "cors";
 import jwt from "jsonwebtoken";
 
 import dotenv from "dotenv";
+import { userRouter } from "./Routers/userRouter.js";
 
 dotenv.config();
 
@@ -41,9 +42,11 @@ app.use(async (req, res, next) => {
 app.get("/", (req, res) => {
   res.send({
     success: true,
-    message: "Welcome to recipe app",
+    message: "Welcome to TasteBUD ",
   });
 });
+//need to match with doc
+app.use("/users", userRouter);
 
 app.use((req, res) => {
   res.send({ success: false, error: "No route found." });

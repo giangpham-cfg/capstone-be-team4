@@ -20,13 +20,11 @@ enum MealTime {
 model User {
   id        String   @id @default(uuid())
   username  String   @unique
-  // email     String   @unique
   password  String
   createdAt DateTime @default(now())
 
   recipes        Recipe[]         @relation("createdByUser")
   comments       Comment[]
-  likes          Like[]
   favoriteRecipe FavoriteRecipe[]
 }
 
@@ -34,7 +32,9 @@ model Recipe {
   id          String   @id @default(uuid())
   name        String
   instruction String[]
+  ingredients String[]
   mealTime    MealTime
+  //add image to display based on the mealTime
   cookTime    Int
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -42,21 +42,9 @@ model Recipe {
   user   User   @relation("createdByUser", fields: [userId], references: [id], onDelete: Cascade)
   userId String
 
-  ingredients     Ingredient[]     @relation("ingredients") //connection to ingredients
   comments        Comment[]
-  likes           Like[]
   favoriteRecipes FavoriteRecipe[]
 }
-
-model Ingredient {
-  id   String @id @default(uuid())
-  name String
-
-  recipe   Recipe @relation("ingredients", fields: [recipeId], references: [id], onDelete: Cascade)
-  recipeId String
-}
-
-//DO i need a table to join ingredients and recipes?
 
 model Comment {
   id        String   @id @default(uuid())
@@ -68,17 +56,6 @@ model Comment {
   userId   String
   Recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
   recipeId String
-}
-
-model Like {
-  id     String @id @default(uuid())
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId String
-
-  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
-  recipeId String
-
-  @@unique([userId, recipeId])
 }
 
 //user and recipe connection. User can fave many recipes and recipes can have many user who favorite it

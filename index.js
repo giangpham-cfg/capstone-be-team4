@@ -20,7 +20,7 @@ app.use(express.json());
 
 app.use(async (req, res, next) => {
   try {
-    if (!req.header.authorization) {
+    if (!req.headers.authorization) {
       return next();
     }
 
@@ -55,7 +55,7 @@ app.get("/", (req, res) => {
 });
 
 app.use(async (req, res, next) => {
-  //check if theres an anth token in header and if it is valid
+  //check if theres an auth token in header and if it is valid
   try {
     if (!req.handle.authorization) {
       return next();

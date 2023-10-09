@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 
 import { usersRouter } from "./routes/usersRouters.js";
+import { recipesRouter } from "./routes/recipesRouter.js";
 
 dotenv.config();
 
@@ -43,6 +44,7 @@ app.use(async (req, res, next) => {
 });
 
 app.use("/users", usersRouter);
+app.use("/recipes", recipesRouter);
 
 //Welcome message
 app.get("/", (req, res) => {

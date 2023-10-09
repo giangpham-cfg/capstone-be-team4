@@ -5,12 +5,52 @@ import jwt from "jsonwebtoken";
 
 import dotenv from "dotenv";
 
+import { usersRouter } from "./routes/usersRouters.js";
+
 dotenv.config();
 
 const app = express();
 export const prisma = new PrismaClient();
+
 app.use(cors());
-app.use(express.json()); // for parsing application/json
+app.use(express.json());
+
+//Middlewaare to auth tokens
+
+app.use(async (req, res, next) => {
+  try {
+    if (!req.header.authorization) {
+      return next();
+    }
+
+    const token = req.headers.authorization.split(" ")[1];
+
+    const { userId } = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+    if (!user) {
+      return next();
+    }
+    delete user.password;
+    req.user = user;
+    next();
+  } catch (error) {
+    res.send({ success: false, error: error.message });
+  }
+});
+
+app.use("/users", usersRouter);
+
+//Welcome message
+app.get("/", (req, res) => {
+  res.send({
+    success: true,
+    message: "Welcome to the TasteBUD server",
+  });
+});
 
 app.use(async (req, res, next) => {
   //check if theres an anth token in header and if it is valid
@@ -19,7 +59,7 @@ app.use(async (req, res, next) => {
       return next();
     }
     const token = req.headers.authorization.split(" ")[1];
-    const { userId } = jwt.verify(token, process.env.JWT_SECRET); //check if token is valid
+    const { userId } = jwt.verify(token, process.env.JWT_SECRET);
     const user = await prisma.user.findUnique({
       where: {
         id: userId,
@@ -34,15 +74,9 @@ app.use(async (req, res, next) => {
   } catch (error) {
     res.send({
       success: false,
-      error: "Invalis token",
+      error: "Invalid token",
     });
   }
-});
-app.get("/", (req, res) => {
-  res.send({
-    success: true,
-    message: "Welcome to recipe app",
-  });
 });
 
 app.use((req, res) => {
@@ -52,4 +86,5 @@ app.use((req, res) => {
 app.use((error, req, res, next) => {
   res.send({ success: false, error: error.message });
 });
+
 app.listen(3000, () => console.log("Server is runing on post 3000"));

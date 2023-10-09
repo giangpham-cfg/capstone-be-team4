@@ -9,7 +9,6 @@ recipesRouter.get("/", async (req, res) => {
   try {
     const recipes = await prisma.recipe.findMany({
       include: {
-        ingredients: true,
         user: { select: { username: true, id: true } },
         comments: true,
       },
@@ -35,7 +34,6 @@ recipesRouter.get("/:recipeId", async (req, res) => {
         id: recipeId,
       },
       include: {
-        ingredients: true,
         user: { select: { username: true, id: true } },
         comments: true,
       },
@@ -44,21 +42,36 @@ recipesRouter.get("/:recipeId", async (req, res) => {
   } catch (error) {}
 });
 
-// create recipe  route: recipes/submit
+// Create recipe  route: recipes/submit
 
-// recipesRouter.post("/submit", async (req, res) => {
-//   try {
-//     const { name, instruction, mealTime } = req.body;
-//     const recipe = await prisma.recipe.findUnique({
-//       where: {
-//         id: recipeId,
-//       },
-//       include: {
-//         ingredients: true,
-//         user: { select: { username: true, id: true } },
-//         comments: true,
-//       },
-//     });
-//     res.send({ success: true, recipe });
-//   } catch (error) {}
-// });
+recipesRouter.post("/submit", async (req, res) => {
+  try {
+    const { name, instruction, ingredients, mealTime, cookTime } = req.body;
+
+    console.log(req.user);
+
+    if (!req.user) {
+      return res.send({
+        success: false,
+        error: "You must login to create a recipe.",
+      });
+    }
+
+    const recipe = await prisma.recipe.create({
+      data: {
+        name,
+        ingredients,
+        instruction,
+        mealTime,
+        cookTime,
+        userId: req.user.id,
+      },
+    });
+    res.send({ success: true, recipe });
+  } catch (error) {
+    res.send({
+      success: true,
+      error: error.message,
+    });
+  }
+});

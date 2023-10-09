@@ -110,3 +110,5 @@ usersRouter.get("/token", async (req, res) => {
     });
   }
 });
+
+//USER CAN GET FAV RECIPES  route: users/:userId/favorite-recipes

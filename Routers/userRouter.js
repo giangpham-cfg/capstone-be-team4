@@ -64,6 +64,7 @@ userRouter.post("/register", async (req, res) => {
     const user = await prisma.user.create({
       data: {
         username,
+
         password: hashedPassword,
       },
     });
@@ -87,7 +88,7 @@ userRouter.get("/token", async (req, res) => {
       user: req.body,
     });
   } catch (error) {
-    return res.send({
+    res.send({
       success: false,
       error: error.message,
     });

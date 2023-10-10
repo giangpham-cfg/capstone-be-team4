@@ -7,7 +7,12 @@ export const recipesRouter = express.Router();
 
 recipesRouter.get("/", async (req, res) => {
   try {
+    const mealtime = req.query.mealtime;
+
+    const filter = mealtime ? { mealTime: mealtime } : {};
+
     const recipes = await prisma.recipe.findMany({
+      where: filter,
       include: {
         user: { select: { username: true, id: true } },
         comments: {
@@ -33,37 +38,37 @@ recipesRouter.get("/", async (req, res) => {
 
 //Get recipes by mealTime (BFAST,LUNCH,DINNER,DESSERT) route: recipes/:mealtype
 
-recipesRouter.get("/:mealTime", async (req, res) => {
-  try {
-    const { mealTime } = req.params;
-    //do i need an additional checker to see if enum is valid??
-    const recipesByMealTime = await prisma.recipe.findMany({
-      where: {
-        mealTime: mealTime.toUpperCase(), // so even if you type recipes/breakfast, it will still werq
-      },
-      include: {
-        user: { select: { username: true, id: true } },
-        comments: {
-          include: {
-            user: {
-              select: {
-                username: true,
-              },
-            },
-          },
-        },
-      },
-    });
+// recipesRouter.get("/:mealTime", async (req, res) => {
+//   try {
+//     const { mealTime } = req.params;
+//     //do i need an additional checker to see if enum is valid??
+//     const recipesByMealTime = await prisma.recipe.findMany({
+//       where: {
+//         mealTime: mealTime.toUpperCase(), // so even if you type recipes/breakfast, it will still werq
+//       },
+//       include: {
+//         user: { select: { username: true, id: true } },
+//         comments: {
+//           include: {
+//             user: {
+//               select: {
+//                 username: true,
+//               },
+//             },
+//           },
+//         },
+//       },
+//     });
 
-    if (recipesByMealTime.length === 0) {
-      res.send({ success: false, message: "No recipes found in database" });
-    } else {
-      res.send({ success: true, recipesByMealTime });
-    }
-  } catch (error) {
-    res.send({ success: false, error: error.message });
-  }
-});
+//     if (recipesByMealTime.length === 0) {
+//       res.send({ success: false, message: "No recipes found in database" });
+//     } else {
+//       res.send({ success: true, recipesByMealTime });
+//     }
+//   } catch (error) {
+//     res.send({ success: false, error: error.message });
+//   }
+// });
 
 //Get single recipe  route: recipes/recipeId
 

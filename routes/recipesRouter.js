@@ -75,3 +75,56 @@ recipesRouter.post("/submit", async (req, res) => {
     });
   }
 });
+
+//Favorite recipe
+
+recipesRouter.post("/:recipeId/favorite", async (req, res) => {
+  try {
+    const { recipeId } = req.params;
+
+    //check if recipe that user wants to favorite exist incase recipe is deleted
+    const recipe = await prisma.recipe.findUnique({
+      where: { id: recipeId },
+    });
+
+    //user not logged in
+    if (!req.user) {
+      return res.send({
+        success: false,
+        error: "Please login to favorite this recipe",
+      });
+    }
+
+    if (!recipe) {
+      return res.send({ success: false, error: "Recipe not found" });
+    }
+
+    const existingFavorite = await prisma.favoriteRecipe.findUnique({
+      where: {
+        userId_recipeId: {
+          userId: req.user.id,
+          recipeId,
+        },
+      },
+    });
+
+    if (existingFavorite) {
+      return res.send({
+        success: false,
+        error: "Recipe already favorited by User",
+      });
+    }
+
+    const addFavorite = await prisma.favoriteRecipe.create({
+      data: {
+        userId: req.user.id,
+        recipeId,
+      },
+    });
+
+    res.send({ success: true, addFavorite });
+  } catch (error) {
+    console.error("Error favoriting recipe:", error);
+    res.send({ success: false, error: error.message });
+  }
+});

@@ -10,7 +10,15 @@ recipesRouter.get("/", async (req, res) => {
     const recipes = await prisma.recipe.findMany({
       include: {
         user: { select: { username: true, id: true } },
-        comments: true,
+        comments: {
+          include: {
+            user: {
+              select: {
+                username: true,
+              },
+            },
+          },
+        },
       },
     });
     if (recipes.length === 0) {
@@ -35,7 +43,15 @@ recipesRouter.get("/:mealTime", async (req, res) => {
       },
       include: {
         user: { select: { username: true, id: true } },
-        comments: true,
+        comments: {
+          include: {
+            user: {
+              select: {
+                username: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -61,11 +77,25 @@ recipesRouter.get("/:recipeId", async (req, res) => {
       },
       include: {
         user: { select: { username: true, id: true } },
-        comments: true,
+        comments: {
+          include: {
+            user: true,
+          },
+        },
+        // comments: { select: { username: true } },
       },
     });
     res.send({ success: true, recipe });
-  } catch (error) {}
+
+    if (!recipe) {
+      return res.status(404).json({
+        success: false,
+        error: "Recipe not found",
+      });
+    }
+  } catch (error) {
+    res.send({ success: false, error: error.message });
+  }
 });
 
 // Create recipe  route: recipes/submit
@@ -195,6 +225,43 @@ recipesRouter.delete("/:recipeId/favorite", async (req, res) => {
     res.send({ success: true, removeFavorite });
   } catch (error) {
     console.error("Error unfavoriting recipe:", error);
+    res.send({ success: false, error: error.message });
+  }
+});
+
+//Add comment to recipe  route: recipes/:recipeId/comments
+
+recipesRouter.post("/:recipeId/comments", async (req, res) => {
+  try {
+    const { recipeId } = req.params;
+    const { text } = req.body;
+
+    //user not logged in
+    if (!req.user) {
+      return res.send({
+        success: false,
+        error: "Please login to comment.",
+      });
+    }
+    //check if recipe that user wants to comment on exist incase recipe is deleted
+    const recipe = await prisma.recipe.findUnique({
+      where: { id: recipeId },
+    });
+
+    if (!recipe) {
+      return res.send({ success: false, error: "Recipe not found" });
+    }
+
+    const comment = await prisma.comment.create({
+      data: {
+        text,
+        userId: req.user.id,
+        recipeId,
+      },
+    });
+
+    res.send({ success: true, comment });
+  } catch (error) {
     res.send({ success: false, error: error.message });
   }
 });

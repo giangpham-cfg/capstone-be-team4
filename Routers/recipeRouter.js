@@ -10,10 +10,8 @@ recipeRouter.get("/", async (req, res) => {
 
     const recipe = await prisma.recipe.findMany({
       include: {
-        ingredients: true,
         comments: true,
-        mealTime: true,
-        cookTime: true,
+
         user: {
           select: {
             id: true,
@@ -72,6 +70,110 @@ recipeRouter.post("/:submit", async (req, res) => {
     });
   }
 });
+
+recipeRouter.get("/mealTime", async (req, res) => {
+  try {
+    //fetch mealTime
+    const mealTime = await prisma.mealTime.findMany({
+      include: {
+        BREAKFAST: true,
+        LUNCH: true,
+        DINNER: true,
+        DESSERT: true,
+      },
+    });
+    res.send({
+      success: true,
+      mealTime,
+    });
+  } catch (error) {
+    return res.send({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+recipeRouter.get("/:recipeId", async (req, res) => {
+  try {
+    const { recipeId } = req.params;
+
+    const recipes = await prisma.recipe.findUnique({
+      where: {
+        id: recipeId,
+      },
+    });
+    res.send({
+      success: true,
+      recipes,
+    });
+  } catch (error) {
+    return res.send({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+//need to finish this
+recipeRouter.put("/:recipeId", async (req, res) => {
+  const { name, ingredients, instruction, mealTime, cookTime } = req.body;
+  const { recipeId } = req.params;
+  try {
+    const recipeUpdate = await prisma.recipe.update({
+      where: {
+        id: recipeId,
+      },
+      data: {},
+    });
+  } catch (error) {
+    return res.send({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+recipeRouter.delete(
+  "/:recipeId",
+
+  async (req, res) => {
+    const { recipeId } = req.params;
+    console.log(recipeId);
+    try {
+      //error handling
+      const deleteCheck = await prisma.recipe.findUnique({
+        where: { id: recipeId },
+      });
+      if (!deleteCheck) {
+        return sen.send({
+          success: false,
+          error: "The recipe you are trying to edit does not exist",
+        });
+      }
+      if (deleteCheck.userId !== req.user.id) {
+        return res.send({
+          success: false,
+          error: "The recipe you are try to delete is not yours.",
+        });
+      }
+      const reciep = await prisma.recipe.delete({
+        where: {
+          id: recipeId,
+        },
+      });
+      res.send({
+        success: true,
+        reciep,
+      });
+    } catch (error) {
+      return res.send({
+        success: false,
+        error: error.message,
+      });
+    }
+  }
+);
 
 // recipeRouter.get("/recipeId/:comment", async (req, res) => {
 //   console.log("Get /comment route started");

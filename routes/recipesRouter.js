@@ -23,6 +23,32 @@ recipesRouter.get("/", async (req, res) => {
   }
 });
 
+//Get recipes by mealTime (BFAST,LUNCH,DINNER,DESSERT) route: recipes/:mealtype
+
+recipesRouter.get("/:mealTime", async (req, res) => {
+  try {
+    const { mealTime } = req.params;
+    //do i need an additional checker to see if enum is valid??
+    const recipesByMealTime = await prisma.recipe.findMany({
+      where: {
+        mealTime: mealTime.toUpperCase(), // so even if you type recipes/breakfast, it will still werq
+      },
+      include: {
+        user: { select: { username: true, id: true } },
+        comments: true,
+      },
+    });
+
+    if (recipesByMealTime.length === 0) {
+      res.send({ success: false, message: "No recipes found in database" });
+    } else {
+      res.send({ success: true, recipesByMealTime });
+    }
+  } catch (error) {
+    res.send({ success: false, error: error.message });
+  }
+});
+
 //Get single recipe  route: recipes/recipeId
 
 recipesRouter.get("/:recipeId", async (req, res) => {
@@ -76,7 +102,7 @@ recipesRouter.post("/submit", async (req, res) => {
   }
 });
 
-//Favorite recipe
+//Add Favorite recipe  route: recipes/:recipeId/favorite
 
 recipesRouter.post("/:recipeId/favorite", async (req, res) => {
   try {
@@ -125,6 +151,50 @@ recipesRouter.post("/:recipeId/favorite", async (req, res) => {
     res.send({ success: true, addFavorite });
   } catch (error) {
     console.error("Error favoriting recipe:", error);
+    res.send({ success: false, error: error.message });
+  }
+});
+
+//Remove Favorite recipe  route: recipes/:recipeId/favorite
+
+recipesRouter.delete("/:recipeId/favorite", async (req, res) => {
+  try {
+    const { recipeId } = req.params;
+    //check if recipe that user wants to favorite exist incase recipe is deleted
+    const recipe = await prisma.recipe.findUnique({
+      where: { id: recipeId },
+    });
+
+    //user not logged in
+    if (!req.user) {
+      return res.send({
+        success: false,
+        error: "Please login to unfavorite this recipe",
+      });
+    }
+
+    if (!recipe) {
+      return res.send({ success: false, error: "Recipe not found" });
+    }
+
+    const existingFavorite = await prisma.favoriteRecipe.findUnique({
+      where: {
+        userId_recipeId: {
+          userId: req.user.id,
+          recipeId,
+        },
+      },
+    });
+
+    const removeFavorite = await prisma.favoriteRecipe.delete({
+      where: {
+        id: existingFavorite.id,
+      },
+    });
+
+    res.send({ success: true, removeFavorite });
+  } catch (error) {
+    console.error("Error unfavoriting recipe:", error);
     res.send({ success: false, error: error.message });
   }
 });

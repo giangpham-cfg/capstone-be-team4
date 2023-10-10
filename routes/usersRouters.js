@@ -111,4 +111,30 @@ usersRouter.get("/token", async (req, res) => {
   }
 });
 
-//USER CAN GET FAV RECIPES  route: users/:userId/favorite-recipes
+//User can retrieve favorite recipes  route: users/:userId/favorite-recipes
+
+usersRouter.get("/:userId/favorite-recipes", async (req, res) => {
+  try {
+    //user not logged in
+    if (!req.user) {
+      return res.send({
+        success: false,
+        error: "Please login to view favorites",
+      });
+    }
+
+    const userFavorites = await prisma.favoriteRecipe.findMany({
+      where: {
+        userId: req.user.id,
+      },
+      include: {
+        recipes: true,
+      },
+    });
+
+    res.send({ success: true, userFavorites });
+  } catch (error) {
+    console.error("Error favoriting recipe:", error);
+    res.send({ success: false, error: error.message });
+  }
+});

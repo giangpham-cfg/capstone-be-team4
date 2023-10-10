@@ -34,8 +34,7 @@ model Recipe {
   instruction String[]
   ingredients String[]
   mealTime    MealTime
-  //add image to display based on the mealTime
-  cookTime    Int
+  cookTime    String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

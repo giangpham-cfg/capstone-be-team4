@@ -76,6 +76,10 @@ recipesRouter.get("/:recipeId", async (req, res) => {
   try {
     const { recipeId } = req.params;
 
+    if (!recipeId) {
+      return res.send({ success: false, error: "Recipe not found" });
+    }
+
     const recipe = await prisma.recipe.findUnique({
       where: {
         id: recipeId,
@@ -87,10 +91,8 @@ recipesRouter.get("/:recipeId", async (req, res) => {
             user: true,
           },
         },
-        // comments: { select: { username: true } },
       },
     });
-    res.send({ success: true, recipe });
 
     if (!recipe) {
       return res.status(404).json({
@@ -98,6 +100,8 @@ recipesRouter.get("/:recipeId", async (req, res) => {
         error: "Recipe not found",
       });
     }
+
+    res.send({ success: true, recipe });
   } catch (error) {
     res.send({ success: false, error: error.message });
   }
@@ -109,12 +113,20 @@ recipesRouter.post("/submit", async (req, res) => {
   try {
     const { name, instruction, ingredients, mealTime, cookTime } = req.body;
 
-    console.log(req.user);
+    // console.log(req.user);
 
     if (!req.user) {
       return res.send({
         success: false,
         error: "You must login to create a recipe.",
+      });
+    }
+
+    if (!name || !instruction || !ingredients || !mealTime || !cookTime) {
+      return res.send({
+        success: false,
+        error:
+          "Please provide all required fields (name, instruction, ingredients, mealTime, cookTime).",
       });
     }
 
@@ -126,6 +138,111 @@ recipesRouter.post("/submit", async (req, res) => {
         mealTime,
         cookTime,
         userId: req.user.id,
+      },
+      include: {
+        user: { select: { username: true, id: true } },
+      },
+    });
+
+    res.send({ success: true, recipe });
+  } catch (error) {
+    res.send({
+      success: true,
+      error: error.message,
+    });
+  }
+});
+
+//Edit recipe
+
+recipesRouter.patch("/:recipeId", async (req, res) => {
+  try {
+    const { recipeId } = req.params;
+    const { name, instruction, ingredients, mealTime, cookTime } = req.body;
+
+    // console.log(req.user);
+
+    const findRecipe = await prisma.recipe.findUnique({
+      where: {
+        id: recipeId,
+      },
+    });
+
+    if (!findRecipe) {
+      return res.send({ success: false, message: "Recipe not found." });
+    }
+
+    if (findRecipe.userId !== req.user.id) {
+      return res.send({
+        success: false,
+        error: "Unauthorized to edit recipe.",
+      });
+    }
+
+    //makes sure that at least one of the inputs is provided
+    if (!name && !instruction && !ingredients && !mealTime && !cookTime) {
+      return res.send({
+        success: false,
+        error:
+          "At least one field (name, instruction, ingredients, mealTime, cookTime) must be provided for the update.",
+      });
+    }
+
+    const recipe = await prisma.recipe.update({
+      where: {
+        id: recipeId,
+      },
+      data: {
+        name,
+        ingredients,
+        instruction,
+        mealTime,
+        cookTime,
+      },
+    });
+    res.send({ success: true, recipe });
+  } catch (error) {
+    res.send({
+      success: true,
+      error: error.message,
+    });
+  }
+});
+
+//Delete recipe  recipes/:recipeId
+
+recipesRouter.delete("/:recipeId", async (req, res) => {
+  try {
+    const { recipeId } = req.params;
+
+    if (!req.user) {
+      return res.send({
+        success: false,
+        error: "Please login to delete recipe.",
+      });
+    }
+
+    const findRecipe = await prisma.recipe.findUnique({
+      where: {
+        id: recipeId,
+      },
+    });
+
+    if (!findRecipe) {
+      return res.send({ success: false, message: "Recipe not found." });
+    }
+
+    if (findRecipe.userId !== req.user.id) {
+      // console.log(req.user.id);
+      return res.send({
+        success: false,
+        error: "Unauthorized to delete recipe.",
+      });
+    }
+
+    const recipe = await prisma.recipe.delete({
+      where: {
+        id: recipeId,
       },
     });
     res.send({ success: true, recipe });
@@ -270,3 +387,56 @@ recipesRouter.post("/:recipeId/comments", async (req, res) => {
     res.send({ success: false, error: error.message });
   }
 });
+
+//Edit comment  ROUTE: recipes/:recipeId/comments/:commentId
+
+// recipesRouter.put("/:recipeId/comments/:commentId", async (req, res) => {
+//   try {
+//     const { recipeId, commentId } = req.params;
+//     const { text } = req.body;
+
+//     const findRecipe = await prisma.recipe.findUnique({
+//       where: {
+//         id: recipeId,
+//       },
+//     });
+
+//     if (!findRecipe) {
+//       return res.send({ success: false, message: "Recipe not found." });
+//     }
+
+//     const findComment = await prisma.recipe.findUnique({
+//       where: {
+//         id: commentId,
+//         // recipeId,
+//       },
+//     });
+
+//     console.log("commentId:", commentId);
+
+//     if (!findComment) {
+//       return res.send({ success: false, error: "Comment not found" });
+//     }
+
+//     if (comment.userId !== req.user.id) {
+//       return res.send({
+//         success: false,
+//         error: "Unauthorized to edit comment.",
+//       });
+//     }
+//     const comment = await prisma.comment.update({
+//       where: {
+//         id: commentId,
+//       },
+//       data: {
+//         text,
+//       },
+//     });
+
+//     res.send({ success: true, comment });
+//   } catch (error) {
+//     res.send({ success: false, error: error.message });
+//   }
+// });
+
+//Delete comment  recipes/:recipeId

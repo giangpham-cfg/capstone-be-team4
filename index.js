@@ -54,33 +54,6 @@ app.get("/", (req, res) => {
   });
 });
 
-app.use(async (req, res, next) => {
-  //check if theres an auth token in header and if it is valid
-  try {
-    if (!req.handle.authorization) {
-      return next();
-    }
-    const token = req.headers.authorization.split(" ")[1];
-    const { userId } = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await prisma.user.findUnique({
-      where: {
-        id: userId,
-      },
-    });
-    if (!user) {
-      return next();
-    }
-    delete user.password;
-    req.user = user;
-    next();
-  } catch (error) {
-    res.send({
-      success: false,
-      error: "Invalid token",
-    });
-  }
-});
-
 app.use((req, res) => {
   res.send({ success: false, error: "No route found." });
 });

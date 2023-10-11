@@ -76,6 +76,10 @@ recipesRouter.get("/:recipeId", async (req, res) => {
   try {
     const { recipeId } = req.params;
 
+    if (!recipeId) {
+      return res.send({ success: false, error: "Recipe not found" });
+    }
+
     const recipe = await prisma.recipe.findUnique({
       where: {
         id: recipeId,
@@ -87,10 +91,8 @@ recipesRouter.get("/:recipeId", async (req, res) => {
             user: true,
           },
         },
-        // comments: { select: { username: true } },
       },
     });
-    res.send({ success: true, recipe });
 
     if (!recipe) {
       return res.status(404).json({
@@ -98,6 +100,8 @@ recipesRouter.get("/:recipeId", async (req, res) => {
         error: "Recipe not found",
       });
     }
+
+    res.send({ success: true, recipe });
   } catch (error) {
     res.send({ success: false, error: error.message });
   }
@@ -109,12 +113,20 @@ recipesRouter.post("/submit", async (req, res) => {
   try {
     const { name, instruction, ingredients, mealTime, cookTime } = req.body;
 
-    console.log(req.user);
+    // console.log(req.user);
 
     if (!req.user) {
       return res.send({
         success: false,
         error: "You must login to create a recipe.",
+      });
+    }
+
+    if (!name || !instruction || !ingredients || !mealTime || !cookTime) {
+      return res.send({
+        success: false,
+        error:
+          "Please provide all required fields (name, instruction, ingredients, mealTime, cookTime).",
       });
     }
 

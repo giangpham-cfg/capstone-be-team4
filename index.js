@@ -4,6 +4,8 @@ import cors from "cors";
 import jwt from "jsonwebtoken";
 
 import dotenv from "dotenv";
+import { userRouter } from "./Routers/userRouter.js";
+import { recipeRouter } from "./Routers/recipeRouter.js";
 
 import { usersRouter } from "./routes/usersRouters.js";
 import { recipesRouter } from "./routes/recipesRouter.js";
